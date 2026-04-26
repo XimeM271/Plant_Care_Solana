@@ -13,7 +13,7 @@ Este proyecto implementa un sistema **CRUD** para administrar un invernadero dig
 
 ## 📚 Descripción
 
-**Plant Care Solana (Simple)** permite a un usuario:
+**Plant Care Solana** permite a un usuario:
 
 - Crear un invernadero personal  
 - Registrar plantas con sus cuidados  
