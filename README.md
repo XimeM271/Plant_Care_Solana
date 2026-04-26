@@ -1,5 +1,4 @@
-# 🌿 Plant Care Solana (Simple)
-
+# 🌿 Plant Care Solana
 
 
 Sistema básico de gestión de plantas desarrollado como **Solana Program** utilizando **Rust** y el framework **Anchor**.  
