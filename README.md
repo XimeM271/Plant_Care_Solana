@@ -1,60 +1,211 @@
-# Biblioteca en Solana
+# 🌿 Plant Care Solana (Simple)
 
-![banner](./images/banner-biblioteca.jpg)
+![banner](./images/banner-plantcare.jpg)
 
-CRUD básico de un Solana Program desarrollado con Rust y Anchor desde el Solana Playground. 
+Sistema básico de gestión de plantas desarrollado como **Solana Program** utilizando **Rust** y el framework **Anchor**.  
 
-Puedes comenzar dándole Fork a este repositorio (abajo te explicamos como 👇), **hemos preparado un entorno de codespaces listo para que no tengas que instalar nada**, solo déjate llevar por la fluidez de los ejercicios y temas desarrollados especialmente para ti. 
+Este proyecto implementa un sistema **CRUD** para administrar un invernadero digital en blockchain, enfocado en simplicidad y claridad del modelo de datos:
 
-Asegúrate de clonar este repositorio a tu cuenta usando el botón **`Fork`**.
+- 🔑 Program Derived Addresses (PDAs)  
+- ⚡ Optimización de memoria *On-Chain*  
+- 🔒 Seguridad mediante validación de propietario  
 
-![fork](./images/fork.png)
+---
 
-## Importando el proyecto 
+## 📚 Descripción
 
-Ya con el repositorio en tu cuenta lo siguiente que debes hacer copiar el `enlace de tu repositorio`, lo que se puede hacer directamente desdel navegador:
+**Plant Care Solana (Simple)** permite a un usuario:
 
-![repo](./images/repo.png)
-Posteriormente, lo uniremos con el siguiente enlace en nuestro navegador de preferencia:
+- Crear un invernadero personal  
+- Registrar plantas con sus cuidados  
+- Editar parámetros de riego y luz  
+- Eliminar plantas  
+- Consultar toda la información almacenada  
 
-```url
-https://beta.solpg.io/
+---
+
+## 🧠 Arquitectura y Estructuras de Datos
+
+En Solana es necesario definir el tamaño de los datos para calcular la renta (*rent*).
+
+### 📦 PDA Principal: `Invernadero`
+
+Cuenta raíz que almacena todas las plantas.
+
+```rust
+#[account]
+#[derive(InitSpace)]
+pub struct Invernadero {
+    pub owner: Pubkey,
+    #[max_len(40)]
+    pub nombre_invernadero: String,
+    #[max_len(15)]
+    pub plantas: Vec<Planta>,
+}
 ```
 
-Lo que nos dará algo parecido a:
+---
 
-![url](./images/url.png)
+### 🧩 Estructura Interna: `Planta`
 
-Al pulsar enter seremos enviados al `Solana Playground` con nuestro proyecto abierto:
+Cada planta contiene:
 
-![pg](./images/pg.png)
+- `especie (String)` → nombre de la planta  
+- `volumen_ml (u16)` → cantidad de agua en mililitros  
+- `frecuencia_dias (u8)` → frecuencia de riego  
+- `luz_directa (bool)` → si requiere luz directa  
 
-Para guardarlo solo damos clic en el boton `import` y asignamos un nombre:
+```rust
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace, PartialEq, Debug)]
+pub struct Planta {
+    #[max_len(30)]
+    pub especie: String,
+    pub volumen_ml: u16,
+    pub frecuencia_dias: u8,
+    pub luz_directa: bool,
+}
+```
 
-![import](./images/import.png)
+---
 
-## Preparacion del entorno
+## 🔒 Seguridad
 
-Primero conectaremos el entorno con la devnet, lo que tambien procederá a la creación de una wallet. Para eso daremos clic en donde dice **Not Conected**:
+El contrato valida que solo el propietario pueda modificar el invernadero:
 
-![playground1](./images/playground1.png)
+```rust
+require!(
+    invernadero.owner == ctx.accounts.owner.key(),
+    Errores::NoEresElOwner
+);
+```
 
-Saldrá la siguiente ventana donde daremos en el botón **Continue**:
+✔ Protege los datos del usuario  
+✔ Evita accesos no autorizados  
 
-![wallet](./images/wallet.png)
+---
 
-Como resultado se mostrará la siguiente información:
+## ⚙️ Funcionalidad (CRUD)
 
-![status](./images/status.png)
+### 🟢 Inicializar Invernadero
 
-* En verde: el estado de la conexión y el entorno al que se encuentra conectado
+Crea la cuenta principal usando:
 
-* En amarillo: la la dirección de la wallet conectada
+```rust
+[b"invernadero", owner.key().as_ref()]
+```
 
-* En azul: la cantidad de tokens en la wallet
+Inicializa:
+- Owner  
+- Nombre del invernadero  
+- Lista vacía de plantas  
 
-> ℹ️ ¿Quieres ver el ejemplo de un "Hola Mundo" en Solana?. Da clic aquí: 👉 [Ver Ejemplo](https://github.com/WayLearnLatam/Solana-starter-kit/tree/1fc6349ba63375a3fe223d8d56911bc64765459b/build-deploy)
+---
 
-> ℹ️ ¿Cuentas con una Wallet de [Phantom](https://phantom.com/) que deseas importar?, Da clic aquí para ver como hacerlo: 
+### ➕ Registrar Planta
 
-👉 [Como Importar una Wallet](https://github.com/WayLearnLatam/Solana-starter-kit/tree/1fc6349ba63375a3fe223d8d56911bc64765459b/import-key-a-playground)
+- Recibe:
+  - especie  
+  - volumen de riego  
+  - frecuencia  
+  - luz directa  
+- Inserta en el vector con `.push()`  
+
+---
+
+### ✏️ Editar Planta
+
+- Busca por `especie`  
+- Actualiza:
+  - volumen  
+  - frecuencia  
+  - luz  
+
+---
+
+### ❌ Eliminar Planta
+
+```rust
+.iter().position(|x| x.especie == especie)
+```
+
+- Si existe → `.remove(index)`  
+- Si no → error `PlantaNoExiste`  
+
+---
+
+### 📖 Leer Invernadero
+
+```rust
+msg!("Datos: {:#?}", invernadero.plantas);
+```
+
+Muestra todas las plantas en logs *On-Chain*
+
+---
+
+## 🧪 Despliegue en Solana Playground
+
+1. Copia el código en `lib.rs`  
+2. Ejecuta:
+
+```bash
+cargo clean
+```
+
+3. Haz clic en **Build**  
+4. Haz clic en **Deploy (Devnet)**  
+
+---
+
+## 🧑‍💻 Pruebas
+
+Puedes interactuar usando:
+
+- Pestaña **Test** del Playground  
+- Scripts en TypeScript:
+
+```ts
+pg.program.methods...
+```
+
+Parámetros:
+- `especie: String`  
+- `volumen_ml: u16`  
+- `frecuencia_dias: u8`  
+- `luz_directa: bool`  
+
+---
+
+## ⚠️ Manejo de Errores
+
+```rust
+#[error_code]
+pub enum Errores {
+    #[msg("No tienes permisos.")]
+    NoEresElOwner,
+    #[msg("La planta no existe en el invernadero.")]
+    PlantaNoExiste,
+}
+```
+
+---
+
+## 📌 Conclusión
+
+Este proyecto demuestra:
+
+- Implementación básica de CRUD en Solana  
+- Control de acceso mediante owner  
+- Manejo de estructuras dinámicas (Vec)  
+- Diseño limpio y sencillo para aprendizaje  
+
+---
+
+## 🚀 Próximos pasos
+
+- Añadir alertas de riego  
+- Implementar historial de cambios  
+- Integrar sensores o IoT  
+- Crear interfaz gráfica para monitoreo  
+
+---
